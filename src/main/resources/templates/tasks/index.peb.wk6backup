@@ -1,0 +1,16 @@
+{% extends "_layout/base.peb" %}
+
+{% block content %}
+{# TODO: Week 6 Lab 1 Activity 3 Step 3
+   Create task list template here
+   Follow instructions in mdbook - you should have:
+   - <h1>Tasks</h1>
+   - Add task form with ARIA labels
+   - Task list with {% for task in tasks %} loop
+   - Delete buttons with aria-label
+#}
+
+<h1>Task Manager</h1>
+<p>TODO: Implement task list template (see mdbook Week 6 Lab 1 Activity 3 Step 3)</p>
+
+{% endblock %}
