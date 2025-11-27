@@ -4,3 +4,7 @@
 /out/
 .claude/
 COMPILATION-ISSUES.md
+data/
+wk*/research/*notes.md
+wk*/evidence/*
+*.log

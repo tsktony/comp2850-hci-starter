@@ -1,0 +1,28 @@
+{# Single task in "view" mode #}
+<li id="task-{{ task.id }}" class="task-row">
+  <span class="task-title">{{ task.title }}</span>
+
+  {# Edit: HTMX when JS is on, normal GET when JS is off #}
+  <form action="/tasks/{{ task.id }}/edit"
+        method="get"
+        style="display:inline;"
+        hx-get="/tasks/{{ task.id }}/edit"
+        hx-target="#task-{{ task.id }}"
+        hx-swap="outerHTML">
+    <button type="submit" aria-label="Edit task: {{ task.title }}">
+      Edit
+    </button>
+  </form>
+
+  {# Delete: same pattern as Week 6, just attached to this item #}
+  <form action="/tasks/{{ task.id }}/delete"
+        method="post"
+        style="display:inline;"
+        hx-post="/tasks/{{ task.id }}/delete"
+        hx-target="#task-{{ task.id }}"
+        hx-swap="outerHTML">
+    <button type="submit" aria-label="Delete task: {{ task.title }}">
+      Delete
+    </button>
+  </form>
+</li>

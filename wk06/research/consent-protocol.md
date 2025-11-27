@@ -35,7 +35,7 @@ I will take brief text notes. I will **not** record audio or video unless you ex
 
 - Stored in my local Git repository on my laptop (private, not public)  
 - Accessible only to me (and teaching staff if needed for marking)  
-- Kept until the start of Semester 2 (January 2026), then deleted or fully anonymised
+- Kept until the end of Semester 1 (January 2026), then deleted or fully anonymised
 
 ## Your Rights
 
