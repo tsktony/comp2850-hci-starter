@@ -1,9 +1,8 @@
 check,item,notes
-Keyboard,All actions are possible with keyboard only,
-Keyboard,Focus order logical; no traps; visible focus,
-Structure,Meaningful headings and landmarks,
-Forms,Labels associated; errors linked,
-Dynamic,Status messages announced,
-Dynamic,No unexpected focus shifts,
-Visual,Contrast AA; 200% zoom ok,
-
+Keyboard,All actions are possible with keyboard only,"Edge on Windows 11; JS on/off; add/edit/delete tests"
+Keyboard,Focus order logical; no traps; visible focus,"Tab order: skip link → add form → task list; no traps"
+Structure,Meaningful headings and landmarks,"<h1>Tasks</h1>; <h2> for sections; <main> landmark"
+Forms,Labels associated; errors linked,"Title + Priority have <label>; errors use aria-describedby"
+Dynamic,Status messages announced,"role=""status"" live region; NVDA reads add/edit/delete messages"
+Dynamic,No unexpected focus shifts,"HTMX path keeps focus in form; no-JS reload puts focus at top"
+Visual,Contrast AA; 200% zoom ok,"Informal check on default theme; layout usable at 200% zoom"

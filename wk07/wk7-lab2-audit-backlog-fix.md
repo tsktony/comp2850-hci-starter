@@ -939,3 +939,117 @@ In **Week 8 Lab 2** you will:
 **Lab authored by**: COMP2850 Teaching Team, University of Leeds
 **Last updated**: 2025-01-14
 **Licence**: Academic use only (not for redistribution)
+
+---
+
+## My Week 7 Lab 2 work 
+
+### 1. Audit summary
+
+I followed the lab instructions and recorded my own audit in:
+
+- `wk07/lab-w7/a11y/audit-template.md`
+- Screenshot evidence in `wk07/lab-w7/evidence/`
+
+Key findings from my manual audit (Edge on Windows 11, NVDA, 100% / 200% zoom):
+
+- **A1 – Priority field has no visible label**  
+  Optional `priority` input on the add form only had a placeholder. Screen reader users only heard “edit, Priority (optional)” with no programmatic label.
+- **A2 – Task list icon image has no `alt` attribute**  
+  The small icon under “Current tasks” had no `alt`. This could be noisy for screen reader users if it is purely decorative.
+- **A3 – Focus outline is technically visible but quite subtle**  
+  Pico default focus outline can be seen, but at 200% zoom it is easy to miss on a busy background. This affects keyboard / low-vision users.
+
+These findings are summarised in the “Findings” table inside `audit-template.md`.
+
+### 2. Backlog updates
+
+I added the new accessibility issues from the audit into the inclusive backlog:
+
+- File: `wk06/backlog/backlog.csv`
+
+New items:
+
+- **ID 9 – Priority field has no visible label**  
+  - `story_ref`: `wk07/lab-w7/a11y/audit-template.md#A1`  
+  - Type: WCAG violation (form labelling, WCAG 1.3.1 / 3.3.2)  
+  - Severity: Medium  
+  - Inclusion risk: Screen reader, Cognitive  
+  - Candidate fix: `true`
+- **ID 10 – Task list icon image has no alt**  
+  - `story_ref`: `wk07/lab-w7/a11y/audit-template.md#A2`  
+  - Severity: Low, inclusion risk: Screen reader
+- **ID 11 – Focus outline too subtle**  
+  - `story_ref`: `wk07/lab-w7/a11y/audit-template.md#A3`  
+  - Severity: Medium, inclusion risk: Keyboard, Low vision, Screen reader
+
+For Lab 2 I chose **ID 9** as my main fix, because it is a WCAG form labelling issue and directly affects screen reader users.
+
+### 3. Implemented fix: A1 — Add visible label for `priority` field
+
+**Backlog ID**: 9  
+**WCAG criteria**: 1.3.1 Info and Relationships, 3.3.2 Labels or Instructions  
+
+#### 3.1 Problem (before)
+
+On the `/tasks` page, the add form contained:
+
+```html
+<input type="text" name="priority" placeholder="Priority (optional)">
+```
+Problems:
+
+No <label> element bound to this input.
+
+Screen reader users only hear a generic edit field with placeholder text.
+
+This fails good practice for form labelling and makes the meaning of this field unclear, especially for people using screen readers or with higher cognitive load.
+
+#### 3.2 Code change
+
+File: src/main/resources/templates/tasks/index.peb
+
+Before
+
+{# Minor issue kept for Week 7 Lab 2 (unlabelled input) #}
+<input type="text" name="priority" placeholder="Priority (optional)">
+
+After
+
+<label for="priority">Priority (optional)</label>
+<input
+  type="text"
+  id="priority"
+  name="priority"
+  placeholder="e.g., High / Medium (optional)"
+>
+
+Changes made:
+
+- Added a visible label `<label for="priority">Priority (optional)</label>`.
+- Gave the input a matching `id="priority"`.
+- Updated placeholder text to be an example value rather than the only label.
+
+
+#### 3.3 Verification and evidence
+
+Checks performed:
+
+- **Keyboard**
+  - Tab order on the form is still logical: Title → Priority → Add Task button.
+  - Priority field is reachable and editable with keyboard only.
+
+- **Screen reader (NVDA, Edge)**
+  - NVDA now announces: “Priority (optional), edit, e.g. High / Medium (optional)” when focusing the field.
+  - This confirms the `<label>` is correctly associated.
+
+- **Visual**
+  - The label appears above the input, consistent with the Title field.
+
+Evidence files:
+
+- `wk07/lab-w7/evidence/a1-priority-label-after.png`  
+  (screenshot of the add form showing the new Priority label and input)
+
+The change improves clarity for all users and especially helps people using screen readers or with cognitive load, by making the optional nature of the field explicit and consistent with the rest of the form.
+
