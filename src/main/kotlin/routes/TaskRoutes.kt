@@ -37,10 +37,8 @@ import java.io.StringWriter
 // You may refactor to this in Week 10 for production readiness
 
 /**
- * Week 6/7 Labs: Task routes with HTMX progressive enhancement and inline edit.
- *
- * - Week 6: Basic add/delete with Int IDs
- * - Week 7: Add inline edit (HTMX + no-JS)
+ * Task routes with HTMX progressive enhancement, inline edit,
+ * and Week 8: search + basic pagination.
  */
 fun Route.taskRoutes() {
     val pebble =
@@ -53,25 +51,106 @@ fun Route.taskRoutes() {
             ).build()
 
     /**
-     * Helper: Check if request is from HTMX
+     * Helper: Check if request is from HTMX.
      */
     fun ApplicationCall.isHtmx(): Boolean =
         request.headers["HX-Request"]?.equals("true", ignoreCase = true) == true
 
     /**
-     * GET /tasks - List all tasks
-     * Returns full page (HTMX and no-JS both use this).
+     * GET /tasks - Full page render
+     *
+     * - query parameter ?q=  : simple title filter
+     * - query parameter ?page=: 1-based page number (defaults to 1)
+     * - uses TaskRepository.search() to get a Page<Task>
      */
     get("/tasks") {
+        // Filter text from query string, e.g. /tasks?q=milk
+        val query = call.request.queryParameters["q"].orEmpty()
+
+        // Page number from query string; default to 1 if missing/invalid
+        val pageParam = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+        val pageNumber = pageParam.coerceAtLeast(1)
+
+        // Fixed page size for now (10 items per page)
+        val pageSize = 10
+
+        // Use search() to get a Page<Task> based on query + page
+        val resultPage =
+            TaskRepository.search(
+                query = query,
+                page = pageNumber,
+                size = pageSize,
+            )
+
         val model =
             mapOf(
                 "title" to "Tasks",
-                "tasks" to TaskRepository.all(),
+                // templates currently expect a simple List<Task>
+                "tasks" to resultPage.items,
+                // used by the filter form (value="{{ query }}")
+                "query" to query,
+                // Page object for pagination partial
+                "page" to resultPage,
             )
+
         val template = pebble.getTemplate("tasks/index.peb")
         val writer = StringWriter()
         template.evaluate(writer, model)
         call.respondText(writer.toString(), ContentType.Text.Html)
+    }
+
+    /**
+     * GET /tasks/fragment - HTMX fragment route
+     *
+     * Returns:
+     *   - task list partial (_list.peb)
+     *   - pager partial (_pager.peb)
+     *   - status live region update (OOB)
+     */
+    get("/tasks/fragment") {
+        val query = call.request.queryParameters["q"].orEmpty()
+        val pageParam = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+        val pageNumber = pageParam.coerceAtLeast(1)
+        val pageSize = 10
+
+        val resultPage =
+            TaskRepository.search(
+                query = query,
+                page = pageNumber,
+                size = pageSize,
+            )
+
+        // Render list fragment
+        val listTemplate = pebble.getTemplate("tasks/_list.peb")
+        val listModel = mapOf(
+            "tasks" to resultPage.items,
+            "editingId" to null,
+            "error" to null,
+        )
+        val listWriter = StringWriter()
+        listTemplate.evaluate(listWriter, listModel)
+        val listHtml = listWriter.toString()
+
+        // Render pager fragment
+        val pagerTemplate = pebble.getTemplate("tasks/_pager.peb")
+        val pagerModel = mapOf(
+            "page" to resultPage,
+            "query" to query,
+        )
+        val pagerWriter = StringWriter()
+        pagerTemplate.evaluate(pagerWriter, pagerModel)
+        val pagerHtml = pagerWriter.toString()
+
+        // OOB status message
+        val statusHtml =
+            """<div id="status" hx-swap-oob="true">
+                Found ${resultPage.totalItems} tasks.
+               </div>""".trimIndent()
+
+        call.respondText(
+            listHtml + pagerHtml + statusHtml,
+            ContentType.Text.Html,
+        )
     }
 
     /**
@@ -99,19 +178,49 @@ fun Route.taskRoutes() {
         val task = TaskRepository.add(title)
 
         if (call.isHtmx()) {
-            // HTMX: render the new task using the same partial as the list
-            val template = pebble.getTemplate("tasks/_item.peb")
-            val model = mapOf("task" to task)
-            val writer = StringWriter()
-            template.evaluate(writer, model)
-            val fragment = writer.toString()
+            // HTMX: after adding a task, re-run search for page 1
+            // (for now we ignore any existing filter/query in the form)
+            val query = call.request.queryParameters["q"].orEmpty()
+            val pageNumber = 1
+            val pageSize = 10
+
+            val resultPage =
+                TaskRepository.search(
+                    query = query,
+                    page = pageNumber,
+                    size = pageSize,
+                )
+
+            // Re-render list + pager into #task-area
+            val listTemplate = pebble.getTemplate("tasks/_list.peb")
+            val listModel = mapOf(
+                "tasks" to resultPage.items,
+                "editingId" to null,
+                "error" to null,
+            )
+            val listWriter = StringWriter()
+            listTemplate.evaluate(listWriter, listModel)
+            val listHtml = listWriter.toString()
+
+            val pagerTemplate = pebble.getTemplate("tasks/_pager.peb")
+            val pagerModel = mapOf(
+                "page" to resultPage,
+                "query" to query,
+            )
+            val pagerWriter = StringWriter()
+            pagerTemplate.evaluate(pagerWriter, pagerModel)
+            val pagerHtml = pagerWriter.toString()
 
             val status =
                 """<div id="status" hx-swap-oob="true">
                     Task "${task.title}" added successfully.
                    </div>""".trimIndent()
 
-            return@post call.respondText(fragment + status, ContentType.Text.Html, HttpStatusCode.Created)
+            return@post call.respondText(
+                listHtml + pagerHtml + status,
+                ContentType.Text.Html,
+                HttpStatusCode.Created,
+            )
         }
 
         // No-JS: POST-Redirect-GET pattern (303 See Other)
@@ -139,7 +248,7 @@ fun Route.taskRoutes() {
         call.respond(HttpStatusCode.SeeOther)
     }
 
-    // --- Week 7: inline edit routes ---
+    // --- Week 7: inline edit routes (unchanged) ---
 
     /**
      * GET /tasks/{id}/edit

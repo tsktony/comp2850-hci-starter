@@ -34,14 +34,31 @@ import java.util.concurrent.atomic.AtomicInteger
 //    import java.time.format.DateTimeParseException
 
 /**
- * Simple task data model for Week 6.
- *
- * Week 7: we keep it simple (id + title).
+ * Simple task data model for Week 6/7.
  */
 data class Task(
     val id: Int,
     var title: String,
 )
+
+/**
+ * Generic page wrapper for pagination (Week 8).
+ */
+data class Page<T>(
+    val items: List<T>,
+    val currentPage: Int,
+    val pageSize: Int,
+    val totalItems: Int,
+) {
+    // Derived properties used by templates
+    val totalPages: Int =
+        if (totalItems == 0) 1 else ((totalItems + pageSize - 1) / pageSize)
+
+    val hasPrevious: Boolean = currentPage > 1
+    val hasNext: Boolean = currentPage < totalPages
+    val previousPage: Int = if (hasPrevious) currentPage - 1 else 1
+    val nextPage: Int = if (hasNext) currentPage + 1 else totalPages
+}
 
 /**
  * In-memory repository with CSV persistence.
@@ -95,6 +112,58 @@ object TaskRepository {
             existing.title = task.title
         }
         persist()
+    }
+
+    /**
+     * Week 8: search + pagination helper.
+     *
+     * @param query Free text to filter by title (case-insensitive).
+     * @param page  1-based page index requested by the caller.
+     * @param size  Page size (will be coerced to at least 1).
+     */
+    fun search(
+        query: String,
+        page: Int,
+        size: Int,
+    ): Page<Task> {
+        val normalizedQuery = query.trim().lowercase()
+        val pageSize = size.coerceAtLeast(1)
+
+        // Work on a copy to avoid exposing internal mutable list
+        val source = tasks.toList()
+
+        val filtered =
+            if (normalizedQuery.isEmpty()) {
+                source
+            } else {
+                source.filter { task ->
+                    task.title.lowercase().contains(normalizedQuery)
+                }
+            }
+
+        val totalItems = filtered.size
+        val totalPages =
+            if (totalItems == 0) 1 else ((totalItems + pageSize - 1) / pageSize)
+
+        // Clamp requested page into valid range
+        val currentPage = page.coerceIn(1, totalPages)
+
+        val fromIndex = (currentPage - 1) * pageSize
+        val toIndex = minOf(fromIndex + pageSize, totalItems)
+
+        val pageItems =
+            if (totalItems == 0) {
+                emptyList()
+            } else {
+                filtered.subList(fromIndex, toIndex)
+            }
+
+        return Page(
+            items = pageItems,
+            currentPage = currentPage,
+            pageSize = pageSize,
+            totalItems = totalItems,
+        )
     }
 
     private fun persist() {

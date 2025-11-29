@@ -1,0 +1,16 @@
+{# Task list partial: renders the <ul> with view/edit items #}
+
+<ul id="task-list" aria-describedby="result-count">
+  {% if tasks is empty %}
+    <li>No tasks yet. Add one above!</li>
+  {% else %}
+    {% for task in tasks %}
+      {# If this task is currently in edit mode (no-JS / full-page edit) #}
+      {% if editingId and editingId == task.id %}
+        {% include "tasks/_edit.peb" with {"task": task, "error": error} %}
+      {% else %}
+        {% include "tasks/_item.peb" with {"task": task} %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+</ul>
