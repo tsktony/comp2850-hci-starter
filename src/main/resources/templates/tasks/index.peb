@@ -3,6 +3,30 @@
 {% block content %}
 <h1>Tasks</h1>
 
+{# Error summary for create-form validation (no-JS path) #}
+{% if error == "title" %}
+  <div
+    id="error-summary"
+    class="error-summary"
+    role="alert"
+    aria-live="assertive"
+    tabindex="-1"
+  >
+    <h2>There is a problem</h2>
+    <ul>
+      <li>
+        <a href="#title">
+          {% if msg == "blank" %}
+            Title is required. Please enter at least one character.
+          {% else %}
+            Title is invalid. Please check and try again.
+          {% endif %}
+        </a>
+      </li>
+    </ul>
+  </div>
+{% endif %}
+
 {# Week 8: filter form with HTMX enhancement + no-JS fallback #}
 <section aria-labelledby="filter-heading">
   <h2 id="filter-heading">Filter tasks</h2>
@@ -11,7 +35,7 @@
     method="get"
     hx-get="/tasks/fragment"
     hx-target="#task-area"
-    hx-trigger="keyup changed delay:300ms, submit from:closest(form)"
+    hx-trigger="keyup changed delay:300ms, submit"
     hx-push-url="true"
   >
     <label for="q">Filter tasks</label>
@@ -45,9 +69,24 @@
       name="title"
       required
       placeholder="e.g., Buy milk"
-      aria-describedby="title-hint"
+      {% if error == "title" %}
+        aria-invalid="true"
+        aria-describedby="title-hint title-error"
+      {% else %}
+        aria-describedby="title-hint"
+      {% endif %}
     >
     <small id="title-hint">Keep it short and specific.</small>
+
+    {% if error == "title" %}
+      <p id="title-error" class="error-message">
+        {% if msg == "blank" %}
+          Title is required. Please enter at least one character.
+        {% else %}
+          Title is invalid. Please check and try again.
+        {% endif %}
+      </p>
+    {% endif %}
 
     {# Week 7 Lab 2 fix: add visible label for optional priority field #}
     <label for="priority">Priority (optional)</label>

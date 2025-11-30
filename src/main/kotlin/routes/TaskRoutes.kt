@@ -21,8 +21,8 @@ import java.io.StringWriter
 // Week 7+ imports (inline edit, toggle completion):
 // import model.Task               // When Task becomes separate model class
 // import model.ValidationResult   // For validation errors
-// import renderTemplate            // Extension function from Main.kt
-// import isHtmxRequest             // Extension function from Main.kt
+// import renderTemplate           // Extension function from Main.kt
+// import isHtmxRequest            // Extension function from Main.kt
 
 // Week 8+ imports (pagination, search, URL encoding):
 // import io.ktor.http.encodeURLParameter  // For query parameter encoding
@@ -71,6 +71,10 @@ fun Route.taskRoutes() {
         val pageParam = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
         val pageNumber = pageParam.coerceAtLeast(1)
 
+        // Optional error info for no-JS validation (Week 8 Lab 2)
+        val error = call.request.queryParameters["error"]
+        val msg = call.request.queryParameters["msg"]
+
         // Fixed page size for now (10 items per page)
         val pageSize = 10
 
@@ -91,6 +95,9 @@ fun Route.taskRoutes() {
                 "query" to query,
                 // Page object for pagination partial
                 "page" to resultPage,
+                // Error info for no-JS path
+                "error" to error,
+                "msg" to msg,
             )
 
         val template = pebble.getTemplate("tasks/index.peb")
@@ -167,10 +174,14 @@ fun Route.taskRoutes() {
                     """<div id="status" hx-swap-oob="true" role="alert" aria-live="assertive">
                         Title is required. Please enter at least one character.
                        </div>""".trimIndent()
-                return@post call.respondText(error, ContentType.Text.Html, HttpStatusCode.BadRequest)
+                return@post call.respondText(
+                    error,
+                    ContentType.Text.Html,
+                    HttpStatusCode.BadRequest,
+                )
             } else {
-                // No-JS: redirect back (could add error query param later)
-                call.response.headers.append("Location", "/tasks")
+                // No-JS: redirect back with error info in query string
+                call.response.headers.append("Location", "/tasks?error=title&msg=blank")
                 return@post call.respond(HttpStatusCode.SeeOther)
             }
         }
