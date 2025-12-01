@@ -1,99 +1,82 @@
 package utils
 
-import io.ktor.http.HttpStatusCode
 import java.io.File
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
-data class MetricsEvent(
+data class LogEntry(
+    val tsIso: String,
     val sessionId: String,
     val requestId: String,
     val taskCode: String,
     val step: String,
     val outcome: String,
     val durationMs: Long,
-    val statusCode: Int,
+    val httpStatus: Int,
     val jsMode: String,
 )
 
 object Logger {
 
-    private val file: File =
-        File("data/metrics.csv").apply {
-            parentFile?.mkdirs()
-            if (!exists()) {
-                writeText(
-                    "ts_iso,session_id,request_id,task_code,step,outcome,ms,http_status,js_mode\n",
-                )
-            }
+    private val file: File
+    private var counter: Int = 0
+
+    init {
+        val dir = File("data")
+        if (!dir.exists()) {
+            dir.mkdirs()
         }
+        file = File(dir, "metrics.csv")
+
+        if (!file.exists() || file.length() == 0L) {
+            file.writeText(
+                "ts_iso,session_id,request_id,task_code,step,outcome,ms,http_status,js_mode\n"
+            )
+        }
+    }
 
     @Synchronized
-    fun write(event: MetricsEvent) {
-        val ts = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
-        val line =
-            buildString {
-                append(ts)
-                append(',')
-                append(event.sessionId)
-                append(',')
-                append(event.requestId)
-                append(',')
-                append(event.taskCode)
-                append(',')
-                append(event.step)
-                append(',')
-                append(event.outcome)
-                append(',')
-                append(event.durationMs)
-                append(',')
-                append(event.statusCode)
-                append(',')
-                append(event.jsMode)
-                append('\n')
-            }
-        file.appendText(line)
+    private fun nextRequestId(): String {
+        counter += 1
+        return "r%04d".format(counter)
     }
 
-    fun success(
+    @Synchronized
+    fun log(
         sessionId: String,
-        requestId: String,
         taskCode: String,
-        durationMs: Long,
-        jsMode: String,
-    ) {
-        write(
-            MetricsEvent(
-                sessionId = sessionId,
-                requestId = requestId,
-                taskCode = taskCode,
-                step = "success",
-                outcome = "",
-                durationMs = durationMs,
-                statusCode = HttpStatusCode.OK.value,
-                jsMode = jsMode,
-            ),
-        )
-    }
-
-    fun validationError(
-        sessionId: String,
-        requestId: String,
-        taskCode: String,
+        step: String,
         outcome: String,
+        durationMs: Long,
+        httpStatus: Int,
         jsMode: String,
     ) {
-        write(
-            MetricsEvent(
+        val ts = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
+        val reqId = nextRequestId()
+
+        val entry =
+            LogEntry(
+                tsIso = ts,
                 sessionId = sessionId,
-                requestId = requestId,
+                requestId = reqId,
                 taskCode = taskCode,
-                step = "validation_error",
+                step = step,
                 outcome = outcome,
-                durationMs = 0L,
-                statusCode = HttpStatusCode.BadRequest.value,
+                durationMs = durationMs,
+                httpStatus = httpStatus,
                 jsMode = jsMode,
-            ),
+            )
+
+        file.appendText(
+            "${entry.tsIso}," +
+                "${entry.sessionId}," +
+                "${entry.requestId}," +
+                "${entry.taskCode}," +
+                "${entry.step}," +
+                "${entry.outcome}," +
+                "${entry.durationMs}," +
+                "${entry.httpStatus}," +
+                "${entry.jsMode}\n"
         )
     }
 }

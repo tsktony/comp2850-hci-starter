@@ -8,6 +8,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.pebbletemplates.pebble.PebbleEngine
 import java.io.StringWriter
+import utils.Logger
 
 /**
  * NOTE FOR NON-INTELLIJ IDEs (VSCode, Eclipse, etc.):
@@ -50,9 +51,6 @@ fun Route.taskRoutes() {
                 },
             ).build()
 
-    /**
-     * Helper: Check if request is from HTMX.
-     */
     fun ApplicationCall.isHtmx(): Boolean =
         request.headers["HX-Request"]?.equals("true", ignoreCase = true) == true
 
@@ -64,21 +62,15 @@ fun Route.taskRoutes() {
      * - uses TaskRepository.search() to get a Page<Task>
      */
     get("/tasks") {
-        // Filter text from query string, e.g. /tasks?q=milk
         val query = call.request.queryParameters["q"].orEmpty()
-
-        // Page number from query string; default to 1 if missing/invalid
         val pageParam = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
         val pageNumber = pageParam.coerceAtLeast(1)
 
-        // Optional error info for no-JS validation (Week 8 Lab 2)
         val error = call.request.queryParameters["error"]
         val msg = call.request.queryParameters["msg"]
 
-        // Fixed page size for now (10 items per page)
         val pageSize = 10
 
-        // Use search() to get a Page<Task> based on query + page
         val resultPage =
             TaskRepository.search(
                 query = query,
@@ -89,13 +81,9 @@ fun Route.taskRoutes() {
         val model =
             mapOf(
                 "title" to "Tasks",
-                // templates currently expect a simple List<Task>
                 "tasks" to resultPage.items,
-                // used by the filter form (value="{{ query }}")
                 "query" to query,
-                // Page object for pagination partial
                 "page" to resultPage,
-                // Error info for no-JS path
                 "error" to error,
                 "msg" to msg,
             )
@@ -108,11 +96,6 @@ fun Route.taskRoutes() {
 
     /**
      * GET /tasks/fragment - HTMX fragment route
-     *
-     * Returns:
-     *   - task list partial (_list.peb)
-     *   - pager partial (_pager.peb)
-     *   - status live region update (OOB)
      */
     get("/tasks/fragment") {
         val query = call.request.queryParameters["q"].orEmpty()
@@ -127,7 +110,6 @@ fun Route.taskRoutes() {
                 size = pageSize,
             )
 
-        // Render list fragment
         val listTemplate = pebble.getTemplate("tasks/_list.peb")
         val listModel = mapOf(
             "tasks" to resultPage.items,
@@ -138,7 +120,6 @@ fun Route.taskRoutes() {
         listTemplate.evaluate(listWriter, listModel)
         val listHtml = listWriter.toString()
 
-        // Render pager fragment
         val pagerTemplate = pebble.getTemplate("tasks/_pager.peb")
         val pagerModel = mapOf(
             "page" to resultPage,
@@ -148,7 +129,6 @@ fun Route.taskRoutes() {
         pagerTemplate.evaluate(pagerWriter, pagerModel)
         val pagerHtml = pagerWriter.toString()
 
-        // OOB status message
         val statusHtml =
             """<div id="status" hx-swap-oob="true">
                 Found ${resultPage.totalItems} tasks.
@@ -165,10 +145,24 @@ fun Route.taskRoutes() {
      * Dual-mode: HTMX fragment or PRG redirect
      */
     post("/tasks") {
+        val start = System.currentTimeMillis()
+        val sessionId = call.request.cookies["sid"] ?: "anon"
+        val jsMode = if (call.isHtmx()) "on" else "off"
+
         val title = call.receiveParameters()["title"].orEmpty().trim()
 
         if (title.isBlank()) {
-            // Validation error handling
+            val duration = System.currentTimeMillis() - start
+            Logger.log(
+                sessionId = sessionId,
+                taskCode = "T3_add",
+                step = "validation_error",
+                outcome = "blank_title",
+                durationMs = duration,
+                httpStatus = HttpStatusCode.BadRequest.value,
+                jsMode = jsMode,
+            )
+
             if (call.isHtmx()) {
                 val error =
                     """<div id="status" hx-swap-oob="true" role="alert" aria-live="assertive">
@@ -180,7 +174,6 @@ fun Route.taskRoutes() {
                     HttpStatusCode.BadRequest,
                 )
             } else {
-                // No-JS: redirect back with error info in query string
                 call.response.headers.append("Location", "/tasks?error=title&msg=blank")
                 return@post call.respond(HttpStatusCode.SeeOther)
             }
@@ -189,8 +182,6 @@ fun Route.taskRoutes() {
         val task = TaskRepository.add(title)
 
         if (call.isHtmx()) {
-            // HTMX: after adding a task, re-run search for page 1
-            // (for now we ignore any existing filter/query in the form)
             val query = call.request.queryParameters["q"].orEmpty()
             val pageNumber = 1
             val pageSize = 10
@@ -202,7 +193,6 @@ fun Route.taskRoutes() {
                     size = pageSize,
                 )
 
-            // Re-render list + pager into #task-area
             val listTemplate = pebble.getTemplate("tasks/_list.peb")
             val listModel = mapOf(
                 "tasks" to resultPage.items,
@@ -227,6 +217,17 @@ fun Route.taskRoutes() {
                     Task "${task.title}" added successfully.
                    </div>""".trimIndent()
 
+            val duration = System.currentTimeMillis() - start
+            Logger.log(
+                sessionId = sessionId,
+                taskCode = "T3_add",
+                step = "success",
+                outcome = "",
+                durationMs = duration,
+                httpStatus = HttpStatusCode.Created.value,
+                jsMode = jsMode,
+            )
+
             return@post call.respondText(
                 listHtml + pagerHtml + status,
                 ContentType.Text.Html,
@@ -234,7 +235,17 @@ fun Route.taskRoutes() {
             )
         }
 
-        // No-JS: POST-Redirect-GET pattern (303 See Other)
+        val duration = System.currentTimeMillis() - start
+        Logger.log(
+            sessionId = sessionId,
+            taskCode = "T3_add",
+            step = "success",
+            outcome = "",
+            durationMs = duration,
+            httpStatus = HttpStatusCode.SeeOther.value,
+            jsMode = jsMode,
+        )
+
         call.response.headers.append("Location", "/tasks")
         call.respond(HttpStatusCode.SeeOther)
     }
@@ -244,27 +255,52 @@ fun Route.taskRoutes() {
      * Dual-mode: HTMX status + removal or PRG redirect
      */
     post("/tasks/{id}/delete") {
+        val start = System.currentTimeMillis()
+        val sessionId = call.request.cookies["sid"] ?: "anon"
+        val jsMode = if (call.isHtmx()) "on" else "off"
+
         val id = call.parameters["id"]?.toIntOrNull()
         val removed = id?.let { TaskRepository.delete(it) } ?: false
+
+        val duration = System.currentTimeMillis() - start
+        val step = if (removed) "success" else "fail"
+        val outcome = if (removed) "" else "not_found"
 
         if (call.isHtmx()) {
             val message = if (removed) "Task deleted." else "Could not delete task."
             val status = """<div id="status" hx-swap-oob="true">$message</div>"""
-            // Returning only the status is enough; HTMX already swaps the <li> via outerHTML
+
+            Logger.log(
+                sessionId = sessionId,
+                taskCode = "T4_delete",
+                step = step,
+                outcome = outcome,
+                durationMs = duration,
+                httpStatus = HttpStatusCode.OK.value,
+                jsMode = jsMode,
+            )
+
             return@post call.respondText(status, ContentType.Text.Html)
         }
 
-        // No-JS: POST-Redirect-GET pattern (303 See Other)
+        Logger.log(
+            sessionId = sessionId,
+            taskCode = "T4_delete",
+            step = step,
+            outcome = outcome,
+            durationMs = duration,
+            httpStatus = HttpStatusCode.SeeOther.value,
+            jsMode = jsMode,
+        )
+
         call.response.headers.append("Location", "/tasks")
         call.respond(HttpStatusCode.SeeOther)
     }
 
-    // --- Week 7: inline edit routes (unchanged) ---
+    // --- Week 7: inline edit routes (unchanged, 这里也加上日志) ---
 
     /**
      * GET /tasks/{id}/edit
-     * HTMX: return only the <li> edit fragment
-     * no-JS: return full page with one task in edit mode
      */
     get("/tasks/{id}/edit") {
         val id = call.parameters["id"]?.toIntOrNull()
@@ -281,7 +317,6 @@ fun Route.taskRoutes() {
             }
 
         if (call.isHtmx()) {
-            // HTMX path: send only the edit <li>
             val template = pebble.getTemplate("tasks/_edit.peb")
             val model = mapOf(
                 "task" to task,
@@ -291,7 +326,6 @@ fun Route.taskRoutes() {
             template.evaluate(writer, model)
             return@get call.respondText(writer.toString(), ContentType.Text.Html)
         } else {
-            // no-JS: render full page, mark which task is in edit mode
             val model =
                 mapOf(
                     "title" to "Tasks",
@@ -308,10 +342,12 @@ fun Route.taskRoutes() {
 
     /**
      * POST /tasks/{id}/edit
-     * HTMX: validate and return view/edit fragment
-     * no-JS: validate and redirect (PRG)
      */
     post("/tasks/{id}/edit") {
+        val start = System.currentTimeMillis()
+        val sessionId = call.request.cookies["sid"] ?: "anon"
+        val jsMode = if (call.isHtmx()) "on" else "off"
+
         val id = call.parameters["id"]?.toIntOrNull()
             ?: return@post call.respond(HttpStatusCode.NotFound)
 
@@ -320,8 +356,18 @@ fun Route.taskRoutes() {
 
         val newTitle = call.receiveParameters()["title"].orEmpty().trim()
 
-        // Validation: title must not be blank
         if (newTitle.isBlank()) {
+            val duration = System.currentTimeMillis() - start
+            Logger.log(
+                sessionId = sessionId,
+                taskCode = "T2_edit",
+                step = "validation_error",
+                outcome = "blank_title",
+                durationMs = duration,
+                httpStatus = HttpStatusCode.BadRequest.value,
+                jsMode = jsMode,
+            )
+
             if (call.isHtmx()) {
                 val template = pebble.getTemplate("tasks/_edit.peb")
                 val model = mapOf(
@@ -336,18 +382,26 @@ fun Route.taskRoutes() {
                     HttpStatusCode.BadRequest,
                 )
             } else {
-                // no-JS: redirect back with error flag
                 call.response.headers.append("Location", "/tasks/$id/edit?error=blank")
                 return@post call.respond(HttpStatusCode.SeeOther)
             }
         }
 
-        // Update and persist
         val updated = existing.copy(title = newTitle)
         TaskRepository.update(updated)
 
+        val duration = System.currentTimeMillis() - start
+        Logger.log(
+            sessionId = sessionId,
+            taskCode = "T2_edit",
+            step = "success",
+            outcome = "",
+            durationMs = duration,
+            httpStatus = HttpStatusCode.OK.value,
+            jsMode = jsMode,
+        )
+
         if (call.isHtmx()) {
-            // HTMX: send view fragment + status message (OOB)
             val viewTemplate = pebble.getTemplate("tasks/_item.peb")
             val viewWriter = StringWriter()
             viewTemplate.evaluate(viewWriter, mapOf("task" to updated))
@@ -359,7 +413,6 @@ fun Route.taskRoutes() {
 
             return@post call.respondText(viewWriter.toString() + status, ContentType.Text.Html)
         } else {
-            // no-JS: redirect back to list (PRG)
             call.response.headers.append("Location", "/tasks")
             return@post call.respond(HttpStatusCode.SeeOther)
         }
@@ -367,7 +420,6 @@ fun Route.taskRoutes() {
 
     /**
      * GET /tasks/{id}/view
-     * Used by the "Cancel" link in HTMX mode to go back to view state.
      */
     get("/tasks/{id}/view") {
         val id = call.parameters["id"]?.toIntOrNull()
