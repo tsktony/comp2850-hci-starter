@@ -297,7 +297,7 @@ fun Route.taskRoutes() {
         call.respond(HttpStatusCode.SeeOther)
     }
 
-    // --- Week 7: inline edit routes (unchanged, 这里也加上日志) ---
+    // --- Week 7: inline edit routes ---
 
     /**
      * GET /tasks/{id}/edit
@@ -407,11 +407,14 @@ fun Route.taskRoutes() {
             viewTemplate.evaluate(viewWriter, mapOf("task" to updated))
 
             val status =
-                """<div id="status" hx-swap-oob="true">
+                """<div id="status" role="status" aria-live="polite" hx-swap-oob="true">
                     Task "${updated.title}" updated successfully.
                    </div>""".trimIndent()
 
-            return@post call.respondText(viewWriter.toString() + status, ContentType.Text.Html)
+            return@post call.respondText(
+                viewWriter.toString() + status,
+                ContentType.Text.Html,
+            )
         } else {
             call.response.headers.append("Location", "/tasks")
             return@post call.respond(HttpStatusCode.SeeOther)

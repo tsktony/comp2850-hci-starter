@@ -3,18 +3,18 @@
 > **📥 Download this template**: [COMP2850-submission-template.md](/downloads/COMP2850-submission-template.md)
 > Right-click the link above and select "Save link as..." to download the template file.
 
-**Student**: [Your name and student ID]
-**Submission date**: [DD/MM/YYYY]
+**Student**: Chenguo Wan 201826896
+**Submission date**: 02/12/2025
 **Academic Year**: 2025-26
 
 ---
 
 ## Privacy & Ethics Statement
 
-- [ ] I confirm all participant data is anonymous (session IDs use P1_xxxx format, not real names)
-- [ ] I confirm all screenshots are cropped/blurred to remove PII (no names, emails, student IDs visible)
-- [ ] I confirm all participants gave informed consent
-- [ ] I confirm this work is my own (AI tools used for code assistance are cited below)
+- [x] I confirm all participant data is anonymous (session IDs use P1_xxxx format, not real names)
+- [x] I confirm all screenshots are cropped/blurred to remove PII (no names, emails, student IDs visible)
+- [x] I confirm all participants gave informed consent
+- [x] I confirm this work is my own (AI tools used for code assistance are cited below)
 
 **AI tools used** (if any): [e.g., "Copilot for route handler boilerplate (lines 45-67 in diffs)"]
 
@@ -24,42 +24,48 @@
 
 ### Link to Needs-Finding (LO2)
 
-**Week 6 Job Story #1**:
-> [Paste your Week 6 job story here - the one that informed your first task]
-
-**How Task 1 tests this**:
-[1 sentence explaining link]
-
+**Week 6 Job Story #1 — Fragmented task sources (S2)**:  
+> When different teachers put tasks in different places (assignment area, announcements, group chat, or only spoken at the end of class),  
+> I want a single place where I can see all my tasks in a clear list,  
+> so I don’t have to act like a detective, copy-pasting from many channels and worrying that I have missed one,  
+> because if I miss even one spoken instruction or hidden announcement, I can lose participation marks or damage my grade.
+**How Task 1 tests this**:  
+Task 1 asks participants to filter and scan a unified task list by keyword and then check how many matching tasks there are, which directly tests whether my interface works as a single, clear place to view and manage tasks instead of hunting across multiple channels.
 ---
 
 ### Evaluation Tasks (4-5 tasks)
 
-#### Task 1 (T1): [Task Name]
+#### Task 1 (T1): Filter tasks by keyword
 
-- **Scenario**: [Brief context - what person needs to do]
-- **Action**: [Specific instruction - what to tell participant]
-- **Success**: [Observable outcome - how you know it worked]
-- **Target time**: [e.g., <10 seconds]
-- **Linked to**: [Week 6 Job Story #X]
+- **Scenario**: You are worried you might miss a coursework deadline and want to quickly see only the tasks related to one module.
+- **Action**: "Use the filter box to show only tasks that contain the word `COMP2850` in the title."
+- **Success**: The list updates and only shows tasks whose titles contain `COMP2850`. The number of tasks matches what the participant expects.
+- **Target time**: < 30 seconds
+- **Linked to**: Week 6 Job Story S2 (Fragmented task sources / centralised list)
 
-#### Task 2 (T2): [Task Name]
+#### Task 2 (T2): Edit a task title
 
-- **Scenario**:
-- **Action**:
-- **Success**:
-- **Target time**:
-- **Linked to**:
+- **Scenario**: You notice that a task title is too vague and want to make it more specific.
+- **Action**: "Edit the task called `Submit invoices` so that the title becomes `Submit invoices by Friday`."
+- **Success**: The task appears in the list with the updated title and there are no duplicate tasks.
+- **Target time**: < 40 seconds (before redesign) / < 5 seconds (after redesign)
+- **Linked to**: Week 6 Job Story S6 (Clear confirmation and error feedback)
 
-#### Task 3 (T3): [Task Name]
+#### Task 3 (T3): Add a new task
 
-- **Scenario**:
-- **Action**:
-- **Success**:
-- **Target time**:
-- **Linked to**:
+- **Scenario**: You remember a new small task you need to do this week and want to add it quickly.
+- **Action**: "Add a new task called `Email group about meeting` to the list."
+- **Success**: The new task appears in the list once, with the correct title.
+- **Target time**: < 30 seconds
+- **Linked to**: Week 6 Job Story S2 (Centralised list of tasks)
 
-[Add Tasks 4-5 as needed]
+#### Task 4 (T4): Delete a completed task
 
+- **Scenario**: You have finished a task and want to remove it so that the list feels cleaner.
+- **Action**: "Delete the task called `Buy printer paper` from the list."
+- **Success**: The task disappears from the list and does not come back after refreshing the page.
+- **Target time**: < 20 seconds
+- **Linked to**: Week 6 Job Story S5 (Managing stress instead of demanding perfection)
 ---
 
 ### Consent Script (They Read Verbatim)
@@ -68,34 +74,47 @@
 "Thank you for participating in my HCI evaluation. This will take about 15 minutes. I'm testing my task management interface, not you. There are no right or wrong answers."
 
 **Rights**:
-- [ ] "Your participation is voluntary. You can stop at any time without giving a reason."
-- [ ] "Your data will be anonymous. I'll use a code (like P1) instead of your name."
-- [ ] "I may take screenshots and notes. I'll remove any identifying information."
-- [ ] "Do you consent to participate?" [Wait for verbal yes]
+- [x] "Your participation is voluntary. You can stop at any time without giving a reason."
+- [x] "Your data will be anonymous. I'll use a code (like P1) instead of your name."
+- [x] "I may take screenshots and notes. I'll remove any identifying information."
+- [x] "Do you consent to participate?" [Wait for verbal yes]
 
-**Recorded consent timestamp**: [e.g., "P1 consented 22/11/2025 14:05"]
+**Recorded consent timestamp**: **Recorded consent timestamps**  
 
+For each participant I recorded verbal consent before starting Task 1:
+
+- **P1_STD** – consented on **27/11/2025 at 09:10** (standard mouse + HTMX, full task flow T1–T4)  
+- **P2_TYPO** – consented on **27/11/2025 at 09:30** (typical “typo-prone” user, HTMX)  
+- **P3_KB** – consented on **27/11/2025 at 09:50** (keyboard-first user, HTMX)  
+- **P4_NOJS** – consented on **27/11/2025 at 10:15** (no-JavaScript variant, full page reloads)  
+- **P5_READ** – consented on **27/11/2025 at 10:40** (careful “check-everything” reader, HTMX)  
+
+For the Week 10 verification pilots (post-redesign) I also obtained verbal consent before re-running Task 2 (edit task):
+
+- **P6_POST** – consented on **01/12/2025 at 09:05** (standard HTMX verification of T2)  
+- **P7_POST** – consented on **01/12/2025 at 09:32** (keyboard-first verification of T2, including intentional validation error)  
+- **P8_POST** – consented on **01/12/2025 at 10:11** (no-JavaScript verification of T2)  
+
+All participants were reminded that they could stop at any time and that their data would be stored using anonymous session IDs only (as shown in `metrics.csv`).
 ---
 
 ## 2. Findings Table
 
-**Instructions**: Fill in this table with 3-5 findings from your pilots. Link each finding to data sources.
+**Instructions**: Filled with 3 key findings from Week 9 + Week 10 pilots. Data sources mainly `metrics.csv` + my pilot notes.
 
 | Finding | Data Source | Observation (Quote/Timestamp) | WCAG | Impact (1-5) | Inclusion (1-5) | Effort (1-5) | Priority |
 |---------|-------------|------------------------------|------|--------------|-----------------|--------------|----------|
-| SR errors not announced | metrics.csv L47-49 + P2 notes 14:23 | P2: "I didn't hear any error" | 3.3.1 Level A | 5 | 5 | 3 | 7 |
-| [Your finding 2] | [Link to metrics.csv line OR pilot notes] | [Participant quote + timestamp] | [WCAG criterion] | [1-5] | [1-5] | [1-5] | [Score] |
-| [Your finding 3] | | | | | | | |
-| [Your finding 4] | | | | | | | |
-| [Your finding 5] | | | | | | | |
+| F1 — T2 edit flow is very slow and hesitant before redesign | `metrics.csv` rows r002, r007, r011, r015, r019 (Week 9 T2_edit successes) | Week 9 T2_edit success times were 25 000–45 000 ms (median ≈ 40 000 ms, MAD ≈ 5 000 ms). Participants needed extra time to check whether the edit had really saved. | 4.1.3 Status Messages (AA) | 4 | 4 | 3 | (4+4)-3 = **5** |
+| F2 — Validation error for blank title is not clearly linked to the input field | `metrics.csv` row r006 (`P2_TYPO`, T2_edit, validation_error, blank_title) + pilot note for P2 | P2 cleared the title and got a blank-title error; they hesitated before recovering because the error message was not clearly tied to the text field. In the original code, the status div had no stronger text and was not structurally linked to the input. | 3.3.1 Error Identification (A), 4.1.3 Status Messages (AA) | 5 | 5 | 3 | (5+5)-3 = **7** |
+| F3 — No-JS users can complete T2 but with much higher time and cognitive load | `metrics.csv` row r015 (`P4_NOJS`, T2_edit, success, 45 000 ms) + no-JS pilot notes | The no-JS participant completed T2_edit, but took about 45 000 ms and needed more scrolling/checking. The flow was technically possible, but the feedback was weaker and slower to interpret compared to HTMX. | 2.1.1 Keyboard (A), 4.1.3 Status Messages (AA) | 4 | 4 | 2 | (4+4)-2 = **6** |
 
 **Priority formula**: (Impact + Inclusion) - Effort
 
-**Top 3 priorities for redesign**:
-1. [Finding #X - Priority score Y]
-2. [Finding #X - Priority score Y]
-3. [Finding #X - Priority score Y]
+**Top 3 priorities for redesign** (used to drive Week 10 Lab 2):
 
+1. **F2 — Validation error for blank title not clearly linked to input** — Priority **7**  
+2. **F3 — No-JS users much slower on T2_edit** — Priority **6**  
+3. **F1 — T2 edit flow generally slow and hesitant** — Priority **5**  
 ---
 
 ## 3. Pilot Metrics (metrics.csv)
